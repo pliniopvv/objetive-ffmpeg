@@ -9,25 +9,25 @@ extern "C" {
 #include <iostream>
 #include <cstdio>
 #include "offmpeg.hpp"
+#include <stdexcept>
 
-int Offmpeg::init(char* video) {
+Offmpeg::Offmpeg(char* video) {
     const char* caminho_video = video;
-    AVFormatContext* formato_ctx = this->ctx;
+    //AVFormatContext* ctx = nullptr;
 
-    if (avformat_open_input(&formato_ctx, caminho_video, nullptr, nullptr) < 0) {
-        std::cerr << "Erro ao abrir o vídeo.\n";
-        return -1;
+    if (avformat_open_input(&ctx, caminho_video, nullptr, nullptr) < 0) {
+        throw std::invalid_argument("Erro ao abrir o vídeo.\n");
     }
 
-    if (avformat_find_stream_info(formato_ctx, nullptr) < 0) {
+    if (avformat_find_stream_info(ctx, nullptr) < 0) {
         std::cerr << "Erro ao buscar informações do stream\n";
-        avformat_close_input(&formato_ctx);
-        return -1;
+        avformat_close_input(&ctx);
+        throw std::invalid_argument("Erro ao buscar informações do stream\n");
     }
 
     int indice_video = -1;
-    for (unsigned int i = 0; i < formato_ctx->nb_streams; i++) {
-        if (formato_ctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
+    for (unsigned int i = 0; i < ctx->nb_streams; i++) {
+        if (ctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
             indice_video = (int)i;
             break;
         }
@@ -35,11 +35,11 @@ int Offmpeg::init(char* video) {
 
     if (indice_video == -1) {
         std::cerr << "Nenhum stream de vídeo encontrado.\n";
-        avformat_close_input(&formato_ctx);
-        return -1;
+        avformat_close_input(&ctx);
+        throw std::invalid_argument("Nenhum stream de vídeo encontrado.\n");
     }
 
-    AVCodecParameters* codec_par = formato_ctx->streams[indice_video]->codecpar;
+    AVCodecParameters* codec_par = ctx->streams[indice_video]->codecpar;
     const AVCodec* codec = avcodec_find_decoder(codec_par->codec_id);
 
     AVCodecContext* codec_ctx = avcodec_alloc_context3(codec);
@@ -49,7 +49,7 @@ int Offmpeg::init(char* video) {
     AVPacket* pkt = av_packet_alloc();
     AVFrame* frame = av_frame_alloc();
 
-    while(av_read_frame(formato_ctx, pkt) >= 0) {
+    while(av_read_frame(ctx, pkt) >= 0) {
         if (pkt->stream_index == indice_video) {
             if (avcodec_send_packet(codec_ctx, pkt) == 0) {
                 if (avcodec_receive_frame(codec_ctx, frame) == 0) {
@@ -92,8 +92,7 @@ int Offmpeg::init(char* video) {
     av_frame_free(&frame);
     av_packet_free(&pkt);
     avcodec_free_context(&codec_ctx);
-    avformat_close_input(&formato_ctx);
-    return 0;
+    avformat_close_input(&ctx);
 }
 
 int Offmpeg::save_frame(char* name[]) {

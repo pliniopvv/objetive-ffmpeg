@@ -12,7 +12,14 @@ extern "C" {
 #include <cstdio>
 typedef struct Offmpeg {
     AVFormatContext *ctx = nullptr;
+    AVCodecContext *cctx = nullptr;
+    const AVCodec *codec = nullptr;
+    AVCodecParameters *cpar = nullptr;
+    AVPacket *pkt = nullptr;
+    AVFrame *frame = nullptr;
+
     public:
+        Offmpeg(char* video);
         int init(char* video);
         int save_frame(char* name[]);
 } Offmpeg;

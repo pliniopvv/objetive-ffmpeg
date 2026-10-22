@@ -11,13 +11,11 @@ extern "C" {
 #include "offmpeg.hpp"
 
 int main(int argc, char* argv[]) {
-    Offmpeg ffmpeg;
-
     if (argc < 2) {
         std::cerr << "Faltou o argumento do vídeo!";
         return -1;
     }
 
-        ffmpeg.init(argv[1]);
+    Offmpeg ffmpeg(argv[1]);
     return 0;
 }
