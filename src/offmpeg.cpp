@@ -15,6 +15,8 @@ Offmpeg::Offmpeg(char* video) {
     const char* caminho_video = video;
     //AVFormatContext* ctx = nullptr;
 
+    double frame_selected = 10.0;
+
     if (avformat_open_input(&ctx, caminho_video, nullptr, nullptr) < 0) {
         throw std::invalid_argument("Erro ao abrir o vídeo.\n");
     }
@@ -39,7 +41,8 @@ Offmpeg::Offmpeg(char* video) {
         throw std::invalid_argument("Nenhum stream de vídeo encontrado.\n");
     }
 
-    cpar = ctx->streams[indice_video]->codecpar;
+    video_stream = ctx->streams[indice_video];
+    cpar = video_stream->codecpar;
     codec = avcodec_find_decoder(cpar->codec_id);
 
     cctx = avcodec_alloc_context3(codec);
@@ -53,8 +56,16 @@ Offmpeg::Offmpeg(char* video) {
         if (pkt->stream_index == indice_video) {
             if (avcodec_send_packet(cctx, pkt) == 0) {
                 if (avcodec_receive_frame(cctx, frame) == 0) {
-                    this->save_frame(frame, "output_frame.ppm");
-                    break;
+
+                    double frame_atual = 00.0;
+                    if (frame->best_effort_timestamp != AV_NOPTS_VALUE) {
+                        frame_atual = frame->best_effort_timestamp * av_q2d(video_stream->time_base);
+                    }
+
+                    if (frame_selected <= frame_atual) {
+                        this->_save_frame(frame, "output_frame.ppm");
+                        break;
+                    }
                 }
             }
         }
@@ -67,7 +78,7 @@ Offmpeg::Offmpeg(char* video) {
     avformat_close_input(&ctx);
 }
 
-int Offmpeg::save_frame(AVFrame* frame, const char* name) {
+int Offmpeg::_save_frame(AVFrame* frame, const char* name) {
     SwsContext* sws_ctx = sws_getContext(
             frame->width, frame->height, (AVPixelFormat)frame->format,
             frame->width, frame->height, AV_PIX_FMT_RGB24,

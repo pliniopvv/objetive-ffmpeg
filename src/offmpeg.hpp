@@ -14,6 +14,7 @@ typedef struct Offmpeg {
     AVFormatContext *ctx = nullptr;
     AVCodecContext *cctx = nullptr;
     const AVCodec *codec = nullptr;
+    AVStream *video_stream = nullptr;
     AVCodecParameters *cpar = nullptr;
     AVPacket *pkt = nullptr;
     AVFrame *frame = nullptr;
@@ -21,7 +22,7 @@ typedef struct Offmpeg {
     public:
         Offmpeg(char* video);
         int init(char* video);
-        int save_frame(AVFrame* frame,const char* name);
+        int _save_frame(AVFrame* frame,const char* name);
 } Offmpeg;
 
 #endif 
