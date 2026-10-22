@@ -21,7 +21,7 @@ typedef struct Offmpeg {
     public:
         Offmpeg(char* video);
         int init(char* video);
-        int save_frame(char* name[]);
+        int save_frame(AVFrame* frame,const char* name);
 } Offmpeg;
 
 #endif 
